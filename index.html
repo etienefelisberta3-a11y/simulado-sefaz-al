@@ -5,44 +5,102 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Simulado Nair — SEFAZ-AL 2026</title>
 <style>
-body{margin:0;background:#f4f7fb;color:#172033;font-family:system-ui,sans-serif}
-header{position:sticky;top:0;background:#10233f;color:white;padding:14px;z-index:3}
+body{margin:0;background:#f4f7fb;color:#172033;font-family:Arial,sans-serif}
+header{background:#10233f;color:#fff;padding:14px;position:sticky;top:0;z-index:5}
 .wrap{max-width:900px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.timer{font-size:20px;font-weight:800}.pause{background:#f3c969;border:0;border-radius:9px;padding:9px 12px;font-weight:700}
-.card{background:white;margin:16px 0;padding:18px;border-radius:14px;box-shadow:0 2px 9px #0001}
-.q{font-size:17px;line-height:1.5;margin:12px 0}.small{font-size:13px;color:#667085}
-button{border:0;border-radius:9px;padding:9px 13px;font-weight:700}.opt{margin-right:7px;background:#e9eef5}.sel{background:#2457a6;color:white}.submit{background:#168553;color:white}
-.bar{height:5px;background:#3b82f6;width:0}.result{display:none}
+.timer{font-size:20px;font-weight:bold}.card{background:#fff;margin:16px 0;padding:18px;border-radius:14px;box-shadow:0 2px 9px #0001}
+.small{font-size:13px;color:#667085}.q{font-size:17px;line-height:1.55;margin:14px 0}
+button{border:0;border-radius:9px;padding:10px 14px;font-weight:bold;cursor:pointer}
+.primary{background:#168553;color:white}.pause{background:#f3c969}.opt{margin:4px;background:#e9eef5}.selected{background:#2457a6;color:#fff}
+#bar{height:5px;background:#3b82f6;width:0}.hidden{display:none}.result{display:none}
 </style>
 </head>
 <body>
-<header><div class="wrap top"><div><b>SIMULADO NAIR · SEFAZ-AL 2026</b><div class="small" style="color:#ccd7e7">160 itens · CEBRASPE · +1 / −1 / 0</div></div><div><span id="timer" class="timer">04:30:00</span> <button id="pause" class="pause">Pausar</button></div></div></header>
-<div class="bar" id="bar"></div>
+<header>
+<div class="wrap top">
+<div><b>SIMULADO NAIR · SEFAZ-AL 2026</b><div class="small" style="color:#ccd7e7">160 itens · CEBRASPE · +1 / −1 / 0</div></div>
+<div><span id="timer" class="timer">04:30:00</span> <button id="pauseBtn" class="pause">Pausar</button></div>
+</div>
+</header>
+<div id="bar"></div>
 <main class="wrap">
-<div class="card"><h1>Simulado SEFAZ-AL 2026</h1><p>Marque Certo, Errado ou Em branco. O gabarito comentado será liberado somente depois da entrega.</p><p class="small">Esta versão já possui o motor do simulado: cronômetro, pausa, respostas salvas, correção líquida e revisão final.</p></div>
-<div class="card" id="startBox"><h2>Pronta para começar?</h2><p>O cronômetro de 4h30 começa somente ao clicar no botão abaixo.</p><button class="submit" id="start">Iniciar simulado</button></div><div class="card" id="startBox"><h2>Pronta para começar?</h2><p>O cronômetro de 4h30 começa somente ao clicar no botão abaixo.</p><button class="submit" id="start">Iniciar simulado</button></div><div id="quiz" style="display:none"></div>
-<div class="card"><button class="submit" id="finish">Entregar simulado</button></div>
+<div class="card" id="startBox">
+<h1>Simulado SEFAZ-AL 2026</h1>
+<p>160 questões no formato Certo/Errado, com 4h30 de prova.</p>
+<button id="startBtn" class="primary">▶ Iniciar simulado</button>
+</div>
+<div id="quiz" class="hidden"></div>
+<div class="card hidden" id="finishBox"><button id="finishBtn" class="primary">Entregar simulado</button></div>
 <div id="result" class="result"></div>
 </main>
 <script>
-var subjects=[
-"Matemática Financeira","Direito Constitucional","Direito Administrativo","Contabilidade Geral",
-"Direito Tributário","Estatística e Probabilidade","Contabilidade Pública","Economia",
-"Finanças Públicas","Legislação Tributária Estadual","Inteligência Artificial","Desenvolvimento de Sistemas",
-"Infraestrutura/TIC e Segurança","Reforma Tributária","Auditoria Fiscal","Ciência de Dados"
-];
+(function(){
+"use strict";
+var subjects=["Matemática Financeira","Direito Constitucional","Direito Administrativo","Contabilidade Geral","Direito Tributário","Estatística e Probabilidade","Contabilidade Pública","Economia","Finanças Públicas","Legislação Tributária Estadual","Inteligência Artificial","Desenvolvimento de Sistemas","Infraestrutura/TIC e Segurança","Reforma Tributária","Auditoria Fiscal","Ciência de Dados"];
 var counts=[5,5,5,5,10,10,10,10,10,10,10,10,10,15,15,20];
-var qs=[],answers=JSON.parse(localStorage.getItem("nair_answers")||"{}"),id=1;
-subjects.forEach(function(s,k){for(var j=0;j<counts[k];j++){qs.push({id:id++,s:s,text:"Analise a proposição a seguir à luz do conteúdo do edital de SEFAZ-AL, considerando as exceções e condições aplicáveis: a regra apresentada deve ser aplicada sem ressalvas em qualquer situação?",a:(id%3!==0),comment:"A resposta depende do alcance da regra e das exceções pertinentes. Em prova CEBRASPE, palavras absolutas como 'sempre', 'nunca' e 'sem ressalvas' devem ser examinadas com atenção."})}});
-function draw(){var h="";qs.forEach(function(q){h+="<div class='card'><div class='small'>Questão "+q.id+" · "+q.s+"</div><div class='q'>"+q.text+"</div><button class='opt "+(answers[q.id]=="C"?"sel":"")+"' onclick='mark("+q.id+","C",this)'>Certo</button><button class='opt "+(answers[q.id]=="E"?"sel":"")+"' onclick='mark("+q.id+","E",this)'>Errado</button><button class='opt "+(answers[q.id]=="B"?"sel":"")+"' onclick='mark("+q.id+","B",this)'>Em branco</button></div>"});document.getElementById("quiz").innerHTML=h;update()}
-function mark(id,v,el){answers[id]=v;localStorage.setItem("nair_answers",JSON.stringify(answers));el.parentNode.querySelectorAll(".opt").forEach(function(x){x.classList.remove("sel")});el.classList.add("sel");update()}
-function update(){document.getElementById("bar").style.width=(Object.keys(answers).length/160*100)+"%"}
-var seconds=16200,paused=true,done=false,started=false;
-setInterval(function(){if(!started||paused||done)return;seconds--;if(seconds<0)seconds=0;var h=String(Math.floor(seconds/3600)).padStart(2,"0"),m=String(Math.floor(seconds%3600/60)).padStart(2,"0"),s=String(seconds%60).padStart(2,"0");document.getElementById("timer").textContent=h+":"+m+":"+s;if(seconds===0)finish()},1000);
-document.getElementById("start").onclick=function(){started=true;paused=false;document.getElementById("startBox").style.display="none";document.getElementById("quiz").style.display="block";this.blur()};document.getElementById("pause").onclick=function(){if(!started)return;paused=!paused;this.textContent=paused?"Retomar":"Pausar"};
-function finish(){if(done)return;done=true;var c=0,e=0,b=0;qs.forEach(function(q){var v=answers[q.id]||"B";if(v==="B")b++;else if((v==="C")===q.a)c++;else e++});var out="<div class='card'><h2>Resultado</h2><h1>"+(c-e)+" pontos líquidos</h1><p>Acertos: "+c+" · Erros: "+e+" · Em branco: "+b+"</p></div>";qs.forEach(function(q){var v=answers[q.id]||"B";out+="<div class='card'><div class='small'>Questão "+q.id+" · "+q.s+"</div><div class='q'>"+q.text+"</div><p><b>Gabarito:</b> "+(q.a?"Certo":"Errado")+" · <b>Sua resposta:</b> "+(v==="C"?"Certo":v==="E"?"Errado":"Em branco")+"</p><p><b>Comentário:</b> "+q.comment+"</p></div>"});document.getElementById("result").innerHTML=out;document.getElementById("result").style.display="block";window.scrollTo(0,document.getElementById("result").offsetTop-70)}
-document.getElementById("finish").onclick=function(){if(confirm("Entregar o simulado agora?"))finish()};
-document.getElementById("timer").textContent="04:30:00";draw();
+var qs=[], id=1;
+for(var s=0;s<subjects.length;s++){
+ for(var j=0;j<counts[s];j++){
+  qs.push({id:id,subject:subjects[s],text:"Analise a proposição a seguir, considerando a legislação, os conceitos técnicos e as exceções aplicáveis ao tema: a regra apresentada deve ser aplicada sem ressalvas em qualquer situação?",answer:(id%3!==0),comment:"Questão estrutural de teste. O banco definitivo será substituído por itens específicos e difíceis, no padrão CEBRASPE."});
+  id++;
+ }
+}
+var answers={};
+try{answers=JSON.parse(localStorage.getItem("nair_answers")||"{}");}catch(e){answers={};}
+var seconds=16200,started=false,paused=true,finished=false;
+var timer=document.getElementById("timer");
+var startBtn=document.getElementById("startBtn"), pauseBtn=document.getElementById("pauseBtn");
+var quiz=document.getElementById("quiz"), startBox=document.getElementById("startBox"), finishBox=document.getElementById("finishBox"), result=document.getElementById("result");
+
+function clock(){
+ var h=String(Math.floor(seconds/3600)).padStart(2,"0");
+ var m=String(Math.floor((seconds%3600)/60)).padStart(2,"0");
+ var s=String(seconds%60).padStart(2,"0");
+ timer.textContent=h+":"+m+":"+s;
+}
+function progress(){
+ document.getElementById("bar").style.width=(Object.keys(answers).length/160*100)+"%";
+}
+function render(){
+ var frag=document.createDocumentFragment();
+ qs.forEach(function(q){
+  var card=document.createElement("div"); card.className="card";
+  var small=document.createElement("div"); small.className="small"; small.textContent="Questão "+q.id+" · "+q.subject;
+  var text=document.createElement("div"); text.className="q"; text.textContent=q.text;
+  var row=document.createElement("div");
+  ["C","E","B"].forEach(function(v){
+   var b=document.createElement("button"); b.className="opt"+(answers[q.id]===v?" selected":"");
+   b.textContent=v==="C"?"Certo":v==="E"?"Errado":"Em branco";
+   b.addEventListener("click",function(){
+    answers[q.id]=v; localStorage.setItem("nair_answers",JSON.stringify(answers));
+    Array.from(row.children).forEach(function(x){x.classList.remove("selected")});
+    b.classList.add("selected"); progress();
+   });
+   row.appendChild(b);
+  });
+  card.appendChild(small);card.appendChild(text);card.appendChild(row);frag.appendChild(card);
+ });
+ quiz.innerHTML="";quiz.appendChild(frag);progress();
+}
+startBtn.addEventListener("click",function(){
+ if(started)return;
+ started=true;paused=false;startBox.classList.add("hidden");quiz.classList.remove("hidden");finishBox.classList.remove("hidden");pauseBtn.textContent="Pausar";render();
+});
+pauseBtn.addEventListener("click",function(){
+ if(!started||finished)return;
+ paused=!paused;pauseBtn.textContent=paused?"Retomar":"Pausar";
+});
+function finish(){
+ if(finished)return;finished=true;paused=true;
+ var c=0,e=0,b=0;
+ qs.forEach(function(q){var v=answers[q.id]||"B";if(v==="B")b++;else if((v==="C")===q.answer)c++;else e++;});
+ result.innerHTML="<div class='card'><h2>Resultado</h2><h1>"+(c-e)+" pontos líquidos</h1><p>Acertos: "+c+" · Erros: "+e+" · Em branco: "+b+"</p></div>";
+ result.style.display="block";finishBox.classList.add("hidden");
+}
+document.getElementById("finishBtn").addEventListener("click",function(){if(confirm("Entregar o simulado agora?"))finish();});
+setInterval(function(){if(!started||paused||finished)return;if(seconds>0){seconds--;clock();}else{finish();}},1000);
+clock();
+})();
 </script>
 </body>
 </html>
